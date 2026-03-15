@@ -28,7 +28,7 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-!**/resources/models/
+!**/src/main/resources/models/
 
 ### VS Code ###
 .vscode/
