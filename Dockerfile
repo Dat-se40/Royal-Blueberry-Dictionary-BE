@@ -25,8 +25,6 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
-# Copy models sang final image
-COPY --from=build /app/src/main/resources/models /app/src/main/resources/models
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
