@@ -20,9 +20,15 @@ RUN ls -lh src/main/resources/models/
 COPY . .
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
-# Bước 2: Chạy ứng dụng
-FROM eclipse-temurin:17-jre-alpine
+# Bước 2: Chạy ứng dụng (dùng Ubuntu thay vì Alpine để có C++ libraries)
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libstdc++6 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/target/*.jar app.jar
 
 
