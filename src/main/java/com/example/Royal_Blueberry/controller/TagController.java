@@ -2,53 +2,66 @@ package com.example.Royal_Blueberry.controller;
 
 import com.example.Royal_Blueberry.entity.Tag;
 import com.example.Royal_Blueberry.entity.WordTagRelation;
+import com.example.Royal_Blueberry.security.CustomUserDetails;
 import com.example.Royal_Blueberry.service.impl.TagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tags")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class TagController {
 
     private final TagService tagService;
-
-    // Lấy userId từ JWT context
     private String getUserId(Principal principal) {
-        return principal.getName(); // Hoặc logic extract ID từ JWT của bạn
+        UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) principal;
+        CustomUserDetails userDetails = (CustomUserDetails) authToken.getPrincipal();
+        return userDetails.getUser().getId();
     }
 
-    // 1. Lấy danh sách tag của user
-    @GetMapping
+
+    // FE gọi lúc khởi động: Lấy toàn bộ Tags
+    @GetMapping("/tags")
     public ResponseEntity<List<Tag>> getMyTags(Principal principal) {
         return ResponseEntity.ok(tagService.getAllTagsByUser(getUserId(principal)));
     }
 
-    // 2. Tạo hoặc cập nhật tag
-    @PostMapping
-    public ResponseEntity<Tag> saveTag(@RequestBody Tag tag, Principal principal) {
+    // FE gọi lúc đồng bộ 1 Tag: tags/sync
+    @PostMapping("/tags/sync")
+    public ResponseEntity<Tag> syncTag(@RequestBody Tag tag, Principal principal) {
         return ResponseEntity.ok(tagService.createOrUpdateTag(tag, getUserId(principal)));
     }
 
-    // 3. Xóa tag
-    @DeleteMapping("/{tagId}")
+    // Xóa tag
+    @DeleteMapping("/tags/{tagId}")
     public ResponseEntity<Void> deleteTag(@PathVariable String tagId, Principal principal) {
         tagService.deleteTag(tagId, getUserId(principal));
         return ResponseEntity.noContent().build();
     }
 
-    // 4. Gắn tag cho 1 từ
-    @PostMapping("/link")
-    public ResponseEntity<WordTagRelation> linkWordToTag(@RequestBody WordTagRelation relation, Principal principal) {
-        return ResponseEntity.ok(tagService.linkWordToTag(relation, getUserId(principal)));
+
+    // ================== PHẦN RELATION ==================
+
+    // FE gọi lúc khởi động: Lấy toàn bộ Relations của User (ĐỂ C# TẢI VỀ MÁY MỚI)
+    @GetMapping("/relations")
+    public ResponseEntity<List<WordTagRelation>> getAllRelations(Principal principal) {
+        return ResponseEntity.ok(tagService.getAllRelationsByUser(getUserId(principal)));
     }
 
-    // 5. Bỏ tag khỏi 1 từ
-    @DeleteMapping("/unlink")
+    // FE gọi lúc đồng bộ 1 Relation: relations/sync
+    @PostMapping("/relations/sync")
+    public ResponseEntity<Boolean> syncRelation(@RequestBody WordTagRelation relation, Principal principal) {
+        tagService.linkWordToTag(relation, getUserId(principal));
+        return ResponseEntity.ok(true);
+    }
+
+    // Xóa liên kết (Bỏ tag khỏi từ)
+    @DeleteMapping("/relations/unlink")
     public ResponseEntity<Void> unlinkWordFromTag(
             @RequestParam String tagId,
             @RequestParam String word,
@@ -56,11 +69,5 @@ public class TagController {
             Principal principal) {
         tagService.unlinkWordFromTag(tagId, word, meaningIndex, getUserId(principal));
         return ResponseEntity.noContent().build();
-    }
-
-    // 6. Xem một từ đang có những tag nào
-    @GetMapping("/word/{word}")
-    public ResponseEntity<List<WordTagRelation>> getTagsOfWord(@PathVariable String word, Principal principal) {
-        return ResponseEntity.ok(tagService.getRelationsByWord(word, getUserId(principal)));
     }
 }

@@ -56,4 +56,7 @@ public class TagService {
     public List<WordTagRelation> getRelationsByWord(String word, String userId) {
         return relationRepository.findByUserIdAndWord(userId, word);
     }
+    public List<WordTagRelation> getAllRelationsByUser(String userId) {
+        return relationRepository.findByUserId(userId);
+    }
 }
